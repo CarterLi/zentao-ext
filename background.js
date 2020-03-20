@@ -3,10 +3,10 @@
 /** @type {WebSocket} */
 var ws;
 
-function getData(key) {
+function getData(key, defaultVal = null) {
   return new Promise(resolve => {
     chrome.storage.sync.get({
-      [key]: null,
+      [key]: defaultVal,
     }, value => resolve(value[key]));
   })
 }
@@ -19,44 +19,55 @@ function setData(key, value) {
   });
 }
 
-function reconnect() {
-  if (ws) ws.close();
+function refreshBugCount() {
+  if (ws) ws.send('bugCount');
+}
 
-  getData('account').then(account => {
+chrome.notifications.onClicked.addListener(id => {
+  open(`https://zentao.eoitek.net/index.php?m=bug&f=view&id=${parseInt(id)}`);
+  chrome.notifications.clear(id);
+});
+
+function reconnect() {
+  if (ws) {
+    ws.close();
+    ws = null;
+  }
+  chrome.browserAction.setIcon({ path: 'disabled.png' });
+
+  getData('account', '').then(account => {
     if (!account) return;
 
     ws = new WebSocket('ws://zentao.eoitek.net:5000/ws/' + encodeURIComponent(account));
-    Object.entries({
-      // open: '打开',
-      error: '错误',
-      close: '关闭'
-    }).forEach(([value, text]) => {
-      ws.addEventListener(value, () => {
-        getData('notify').then(x => {
-          if (!x) return;
-          chrome.browserAction.setBadgeBackgroundColor({ color: [0xFF, 0, 0, 0xFF] });
-          chrome.browserAction.setBadgeText({ text });
-        })
+    ws.addEventListener('open', () => {
+      chrome.browserAction.setIcon({ path: 'enabled.png' });
+    });
+
+    Object.entries(['error', 'close']).forEach(type => {
+      ws.addEventListener(type, () => {
+        chrome.browserAction.setIcon({ path: 'disabled.png' });
+        chrome.browserAction.setBadgeText({ text: '' });
       });
     });
     ws.addEventListener('message', ev => {
       const bug = JSON.parse(ev.data);
-      getData('notify').then(x => {
-        if (!x) return;
-        chrome.browserAction.setBadgeBackgroundColor({ color: [0x42, 0x85, 0xF4, 0xFF] });
-        chrome.browserAction.setBadgeText({ text: bug.bugCount + '' });
+      getData('countlvl', 5).then(value => {
+        if (!value) return;
+        let count = 0;
+        for (let i=1; i<=value; ++i) count += bug.bugCount[i] || 0;
+        chrome.browserAction.setBadgeText({ text: count + '' });
       })
       if (!bug.actor) return;
-      const no = new Notification(`${bug.actor}给你${bug.action === 'opened' ? '创建' : '指派'}了 ${bug.severity} 级BUG`, {
-        body: `#${bug.id}: ${bug.title}\n@ ${bug.product}`,
-        icon: 'icon.png',
-        lang: 'zh',
-        requireInteraction: true,
+      getData('notifylvl', 5).then(value => {
+        if (bug.severity > value) return;
+        chrome.notifications.create(`${bug.id}_${Date.now()}`, {
+          type: 'basic',
+          iconUrl: 'icon.png',
+          title: `${bug.actor}给你${bug.action === 'opened' ? '创建' : '指派'}了 ${bug.severity} 级BUG`,
+          message: `#${bug.id}: ${bug.title} @ ${bug.product}`,
+          requireInteraction: true,
+        });
       });
-      no.addEventListener('click', ev => {
-        open(`https://zentao.eoitek.net/index.php?m=bug&f=view&id=${bug.id}`);
-        no.close();
-      })
     });
   });
 }

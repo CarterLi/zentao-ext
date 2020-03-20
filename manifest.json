@@ -1,0 +1,16 @@
+{
+  "name": "禅道实时推送",
+  "version": "1.0",
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "permissions": ["notifications", "storage"],
+  "browser_action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "icons": {
+    "128": "icon.png"
+  },
+  "manifest_version": 2
+}

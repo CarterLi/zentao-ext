@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <title>禅道实时推送</title>
+    <style>
+      #form label {
+        display: flex;
+        width: 260px;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+      #form input, #form select {
+        width: 160px;
+      }
+      #form div {
+        text-align: right;
+      }
+      #form button {
+        margin-left: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <form id="form">
+      <label>
+        禅道用户名
+        <input name="account" placeholder="例如 carter.li" />
+      </label>
+      <label>
+        BUG数量显示
+        <input type="checkbox" name="notify" />
+      </label>
+      <label>
+        连接状态
+        <select name="status" disabled>
+          <option value="0">链接中</option>
+          <option value="1">已连接</option>
+          <option value="2">关闭中</option>
+          <option value="3">已关闭</option>
+          <option value="-1">未链接</option>
+        </select>
+      </label>
+      <div>
+        <a href="https://zentao.eoitek.net/index.php?m=my&f=bug" target="_blank">我的bug列表</a><!--
+     --><button type="submit" id="reconnect">重连</button>
+      </div>
+    </form>
+    <script src="popup.js"></script>
+  </body>
+</html>

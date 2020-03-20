@@ -72,4 +72,5 @@ function reconnect() {
   });
 }
 
+window.ononline = reconnect;
 reconnect();

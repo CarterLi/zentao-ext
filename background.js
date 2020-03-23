@@ -43,12 +43,12 @@ function reconnect() {
       chrome.browserAction.setIcon({ path: 'enabled.png' });
     });
 
-    Object.entries(['error', 'close']).forEach(type => {
-      ws.addEventListener(type, () => {
-        chrome.browserAction.setIcon({ path: 'disabled.png' });
-        chrome.browserAction.setBadgeText({ text: '' });
-      });
-    });
+    const cleanUp = () => {
+      chrome.browserAction.setIcon({ path: 'disabled.png' });
+      chrome.browserAction.setBadgeText({ text: '' });
+    };
+    ws.addEventListener('error', cleanUp);
+    ws.addEventListener('close', cleanUp);
     ws.addEventListener('message', ev => {
       const bug = JSON.parse(ev.data);
       getData('countlvl', 5).then(value => {

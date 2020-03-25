@@ -38,7 +38,7 @@ function reconnect() {
   getData('account', '').then(account => {
     if (!account) return;
 
-    ws = new WebSocket('ws://zentao.eoitek.net:5000/ws/' + encodeURIComponent(account));
+    ws = new WebSocket('wss://zentao.eoitek.net:5000/ws/' + encodeURIComponent(account));
     ws.addEventListener('open', () => {
       chrome.browserAction.setIcon({ path: 'enabled.png' });
     });

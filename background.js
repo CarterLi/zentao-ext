@@ -20,7 +20,7 @@ function setData(key, value) {
 }
 
 function refreshBugCount() {
-  if (ws) ws.send('bugCount');
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send('bugCount');
 }
 
 chrome.notifications.onClicked.addListener(id => {
@@ -72,5 +72,10 @@ function reconnect() {
   });
 }
 
-window.ononline = reconnect;
+function connectIfClosed() {
+  if (!ws || ws.readyState === ws.CLOSED) reconnect();
+}
+
+window.ononline = connectIfClosed;
+setTimeout(connectIfClosed, 60 * 1000)
 reconnect();

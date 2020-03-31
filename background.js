@@ -77,5 +77,5 @@ function connectIfClosed() {
 }
 
 window.ononline = connectIfClosed;
-setTimeout(connectIfClosed, 60 * 1000)
+setInterval(connectIfClosed, 60 * 1000)
 reconnect();

@@ -28,6 +28,12 @@ chrome.notifications.onClicked.addListener(id => {
   chrome.notifications.clear(id);
 });
 
+const allowed_actions = {
+  edited: '编辑',
+  assigned: '指派',
+  opened: '创建',
+}
+
 function reconnect() {
   if (ws) {
     ws.close();
@@ -63,7 +69,7 @@ function reconnect() {
         chrome.notifications.create(`${bug.id}_${Date.now()}`, {
           type: 'basic',
           iconUrl: 'icon.png',
-          title: `${bug.actor}给你${bug.action === 'opened' ? '创建' : '指派'}了 ${bug.severity} 级BUG`,
+          title: `${bug.actor}给你${allowed_actions[bug.action]}了 ${bug.severity} 级BUG`,
           message: `#${bug.id}: ${bug.title} @ ${bug.product}`,
           requireInteraction: true,
         });

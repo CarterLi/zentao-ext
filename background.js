@@ -78,10 +78,14 @@ function reconnect() {
   });
 }
 
-function connectIfClosed() {
-  if (!ws || ws.readyState === ws.CLOSED) reconnect();
+function retry() {
+  if (!ws || ws.readyState === ws.CLOSED) {
+    reconnect();
+  } else {
+    refreshBugCount();
+  }
 }
 
-window.ononline = connectIfClosed;
-setInterval(connectIfClosed, 60 * 1000)
+window.ononline = retry;
+setInterval(retry, 60 * 1000)
 reconnect();

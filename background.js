@@ -19,8 +19,8 @@ function setData(key, value) {
   });
 }
 
-function refreshBugCount() {
-  if (ws && ws.readyState === WebSocket.OPEN) ws.send('bugCount');
+function sendData(str) {
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(str);
 }
 
 chrome.notifications.onClicked.addListener(id => {
@@ -66,12 +66,14 @@ function reconnect() {
     ws.addEventListener('close', cleanUp);
     ws.addEventListener('message', ev => {
       const data = JSON.parse(ev.data);
-      getData('countlvl', 5).then(value => {
-        if (!value) return;
-        let count = 0;
-        for (let i=1; i<=value; ++i) count += data.bugCount[i] || 0;
-        chrome.browserAction.setBadgeText({ text: count + '' });
-      })
+      if (data.bugCount) {
+        getData('countlvl', 5).then(value => {
+          if (!value) return;
+          let count = 0;
+          for (let i=1; i<=value; ++i) count += data.bugCount[i] || 0;
+          chrome.browserAction.setBadgeText({ text: count + '' });
+        });
+      }
       if (data.timesheetInfo) {
         getData('notifyts', true).then(value => {
           if (!value) return;
@@ -88,17 +90,18 @@ function reconnect() {
           }
         });
       }
-      if (!data.actor) return;
-      getData('notifylvl', 5).then(value => {
-        if (data.severity > value) return;
-        chrome.notifications.create(`${data.id}_${Date.now()}`, {
-          type: 'basic',
-          iconUrl: 'icon.png',
-          title: `${data.actor}给你${allowed_actions[data.action]}了 ${data.severity} 级BUG`,
-          message: `#${data.id}: ${data.title} @ ${data.product}`,
-          requireInteraction: true,
+      if (data.actor) {
+        getData('notifylvl', 5).then(value => {
+          if (data.severity > value) return;
+          chrome.notifications.create(`${data.id}_${Date.now()}`, {
+            type: 'basic',
+            iconUrl: 'icon.png',
+            title: `${data.actor}给你${allowed_actions[data.action]}了 ${data.severity} 级BUG`,
+            message: `#${data.id}: ${data.title} @ ${data.product}`,
+            requireInteraction: true,
+          });
         });
-      });
+      }
     });
   });
 }
@@ -107,10 +110,24 @@ function retry() {
   if (!ws || ws.readyState === ws.CLOSED) {
     reconnect();
   } else {
-    refreshBugCount();
+    sendData('bugCount');
   }
+}
+
+let timeoutHandle;
+
+function updateTsTimeout() {
+  clearTimeout(timeoutHandle);
+  getData('tstime', '18:00').then(value => {
+    const now = Date.now();
+    const target = new Date().setHours(...value.split(':').map(x => +x), 0, 0);
+    if (now < target) {
+      timeoutHandle = setTimeout(() => sendData('timesheetInfo'), target - now);
+    }
+  });
 }
 
 window.ononline = retry;
 setInterval(retry, 60 * 1000)
+updateTsTimeout();
 reconnect();
